@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Prompts Avanzado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --background: #ffffff;
+            --foreground: #475569;
+            --card: #ecfeff;
+            --card-foreground: #164e63;
+            --popover: #ffffff;
+            --popover-foreground: #475569;
+            --primary: #164e63;
+            --primary-foreground: #ffffff;
+            --secondary: #84cc16;
+            --secondary-foreground: #ffffff;
+            --muted: #f0fdf4;
+            --muted-foreground: #374151;
+            --accent: #84cc16;
+            --accent-foreground: #164e63;
+            --destructive: #e11d48;
+            --destructive-foreground: #ffffff;
+            --border: #e5e7eb;
+            --input: #ffffff;
+            --ring: rgba(22, 78, 99, 0.5);
+            --radius: 0.5rem;
+            --sidebar: #ecfeff;
+            --sidebar-foreground: #164e63;
+            --sidebar-primary: #ffffff;
+            --sidebar-primary-foreground: #164e63;
+            --sidebar-accent: #84cc16;
+            --sidebar-accent-foreground: #ffffff;
+            --sidebar-border: #e5e7eb;
+        }
+
+        .dark {
+            --background: #0f172a;
+            --foreground: #e2e8f0;
+            --card: #1e293b;
+            --card-foreground: #e2e8f0;
+            --popover: #1e293b;
+            --popover-foreground: #e2e8f0;
+            --primary: #0ea5e9;
+            --primary-foreground: #ffffff;
+            --secondary: #84cc16;
+            --secondary-foreground: #0f172a;
+            --muted: #334155;
+            --muted-foreground: #94a3b8;
+            --accent: #84cc16;
+            --accent-foreground: #0f172a;
+            --destructive: #ef4444;
+            --destructive-foreground: #ffffff;
+            --border: #334155;
+            --input: #1e293b;
+            --ring: rgba(14, 165, 233, 0.5);
+            --sidebar: #1e293b;
+            --sidebar-foreground: #e2e8f0;
+            --sidebar-primary: #0ea5e9;
+            --sidebar-primary-foreground: #ffffff;
+            --sidebar-accent: #84cc16;
+            --sidebar-accent-foreground: #0f172a;
+            --sidebar-border: #334155;
+        }
+
+        * {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .font-geist {
+            font-family: 'Geist', sans-serif;
+        }
+
+        .bg-background { background-color: var(--background); }
+        .text-foreground { color: var(--foreground); }
+        .bg-card { background-color: var(--card); }
+        .text-card-foreground { color: var(--card-foreground); }
+        .bg-primary { background-color: var(--primary); }
+        .text-primary-foreground { color: var(--primary-foreground); }
+        .bg-secondary { background-color: var(--secondary); }
+        .text-secondary-foreground { color: var(--secondary-foreground); }
+        .bg-muted { background-color: var(--muted); }
+        .text-muted-foreground { color: var(--muted-foreground); }
+        .bg-accent { background-color: var(--accent); }
+        .text-accent-foreground { color: var(--accent-foreground); }
+        .border-border { border-color: var(--border); }
+        .bg-input { background-color: var(--input); }
+        .bg-sidebar { background-color: var(--sidebar); }
+        .text-sidebar-foreground { color: var(--sidebar-foreground); }
+
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glow {
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+        }
+
+        .typing-indicator {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .prompt-editor {
+            min-height: 200px;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .prompt-editor:focus {
+            box-shadow: 0 0 0 3px var(--ring);
+            border-color: var(--primary);
+        }
+
+        .suggestion-item:hover {
+            background-color: var(--accent);
+            color: var(--accent-foreground);
+            transform: translateX(4px);
+        }
+
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .template-card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .history-item {
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background-color: var(--muted);
+            border-left: 4px solid var(--accent);
+        }
+
+        .floating-toolbar {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .prompt-editor:focus + .floating-toolbar,
+        .floating-toolbar:hover {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .char-counter {
+            transition: color 0.3s ease;
+        }
+
+        .char-counter.warning {
+            color: #f59e0b;
+        }
+
+        .char-counter.danger {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+    <div class="container mx-auto p-6 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold font-geist bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                        Editor de Prompts IA
+                    </h1>
+                    <p class="text-muted-foreground mt-2">Crea prompts inteligentes para tu chatbot con herramientas avanzadas</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button id="themeToggle" class="p-2 rounded-lg bg-card hover:bg-muted transition-colors">
+                        <i class="fas fa-moon text-lg"></i>
+                    </button>
+                    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div class="w-2 h-2 bg-accent rounded-full typing-indicator"></div>
+                        <span>IA Lista</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Sidebar - Historial y Templates -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Templates -->
+                <div class="bg-sidebar rounded-xl p-4 border border-sidebar-border fade-in">
+                    <h3 class="font-geist font-semibold text-sidebar-foreground mb-4 flex items-center gap-2">
+                        <i class="fas fa-layer-group text-sidebar-accent"></i>
+                        Templates
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="template-card bg-sidebar-primary rounded-lg p-3 cursor-pointer transition-all duration-300 border border-sidebar-border hover:border-sidebar-accent">
+                            <h4 class="font-medium text-sidebar-primary-foreground text-sm">Asistente Creativo</h4>
+                            <p class="text-xs text-muted-foreground mt-1">Para generar contenido creativo</p>
+                        </div>
+                        <div class="template-card bg-sidebar-primary rounded-lg p-3 cursor-pointer transition-all duration-300 border border-sidebar-border hover:border-sidebar-accent">
+                            <h4 class="font-medium text-sidebar-primary-foreground text-sm">Análisis de Datos</h4>
+                            <p class="text-xs text-muted-foreground mt-1">Para interpretar información</p>
+                        </div>
+                        <div class="template-card bg-sidebar-primary rounded-lg p-3 cursor-pointer transition-all duration-300 border border-sidebar-border hover:border-sidebar-accent">
+                            <h4 class="font-medium text-sidebar-primary-foreground text-sm">Soporte Técnico</h4>
+                            <p class="text-xs text-muted-foreground mt-1">Para resolver problemas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial -->
+                <div class="bg-sidebar rounded-xl p-4 border border-sidebar-border fade-in">
+                    <h3 class="font-geist font-semibold text-sidebar-foreground mb-4 flex items-center gap-2">
+                        <i class="fas fa-history text-sidebar-accent"></i>
+                        Historial
+                    </h3>
+                    <div class="space-y-2 max-h-64 overflow-y-auto" id="historyContainer">
+                        <!-- El historial se llenará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Principal -->
+            <div class="lg:col-span-3 space-y-6">
+                <!-- Toolbar -->
+                <div class="bg-card rounded-xl p-4 border border-border fade-in">
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                        <div class="flex items-center gap-2">
+                            <button class="toolbar-btn p-2 rounded-lg bg-primary text-primary-foreground hover:bg-opacity-80 transition-all">
+                                <i class="fas fa-bold"></i>
+                            </button>
+                            <button class="toolbar-btn p-2 rounded-lg bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all">
+                                <i class="fas fa-italic"></i>
+                            </button>
+                            <button class="toolbar-btn p-2 rounded-lg bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all">
+                                <i class="fas fa-code"></i>
+                            </button>
+                            <div class="w-px h-6 bg-border mx-2"></div>
+                            <button class="toolbar-btn p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all">
+                                <i class="fas fa-list-ul"></i>
+                            </button>
+                            <button class="toolbar-btn p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all">
+                                <i class="fas fa-quote-right"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-magic text-accent"></i>
+                                <span class="text-sm text-muted-foreground">Sugerencias IA</span>
+                                <div class="w-8 h-4 bg-accent rounded-full relative cursor-pointer" id="aiToggle">
+                                    <div class="w-3 h-3 bg-white rounded-full absolute top-0.5 right-0.5 transition-all duration-300"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editor de Texto -->
+                <div class="relative fade-in">
+                    <div class="bg-card rounded-xl border border-border overflow-hidden glow">
+                        <div class="p-4 border-b border-border bg-muted">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-geist font-semibold text-card-foreground flex items-center gap-2">
+                                    <i class="fas fa-edit text-accent"></i>
+                                    Editor de Prompts
+                                </h3>
+                                <div class="flex items-center gap-4">
+                                    <span class="char-counter text-sm text-muted-foreground" id="charCounter">0 / 2000</span>
+                                    <button class="p-2 rounded-lg bg-accent text-accent-foreground hover:bg-opacity-80 transition-all" id="clearBtn">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="relative">
+                            <textarea 
+                                id="promptEditor"
+                                class="prompt-editor w-full p-6 bg-input text-foreground border-0 outline-none resize-none"
+                                placeholder="Escribe tu prompt aquí... 
+
+Ejemplo:
+Actúa como un experto en marketing digital. Necesito que me ayudes a crear una estrategia de contenido para redes sociales que sea efectiva y genere engagement. Considera los siguientes aspectos:
+
+1. Audiencia objetivo
+2. Plataformas principales  
+3. Tipos de contenido
+4. Frecuencia de publicación
+
+Proporciona ejemplos específicos y métricas para medir el éxito."
+                                rows="12"
+                                maxlength="2000"
+                            ></textarea>
+                            
+                            <!-- Sugerencias flotantes -->
+                            <div id="suggestions" class="absolute top-4 right-4 w-80 bg-popover border border-border rounded-lg shadow-lg p-4 hidden slide-in">
+                                <h4 class="font-medium text-popover-foreground mb-3 flex items-center gap-2">
+                                    <i class="fas fa-lightbulb text-accent"></i>
+                                    Sugerencias IA
+                                </h4>
+                                <div class="space-y-2" id="suggestionsList">
+                                    <!-- Las sugerencias se llenarán dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex items-center justify-between gap-4 fade-in">
+                    <div class="flex items-center gap-3">
+                        <button class="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-opacity-90 transition-all flex items-center gap-2" id="testPrompt">
+                            <i class="fas fa-play"></i>
+                            Probar Prompt
+                        </button>
+                        <button class="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg font-medium hover:bg-opacity-90 transition-all flex items-center gap-2" id="savePrompt">
+                            <i class="fas fa-save"></i>
+                            Guardar
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="px-4 py-3 bg-muted text-muted-foreground rounded-lg hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2" id="exportPrompt">
+                            <i class="fas fa-download"></i>
+                            Exportar
+                        </button>
+                        <button class="px-4 py-3 bg-muted text-muted-foreground rounded-lg hover:bg-accent hover:text-accent-foreground transition-all flex items-center gap-2" id="sharePrompt">
+                            <i class="fas fa-share"></i>
+                            Compartir
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel de Resultados -->
+                <div id="resultsPanel" class="bg-card rounded-xl border border-border p-6 hidden fade-in">
+                    <h3 class="font-geist font-semibold text-card-foreground mb-4 flex items-center gap-2">
+                        <i class="fas fa-robot text-accent"></i>
+                        Resultado del Chatbot
+                    </h3>
+                    <div class="bg-muted rounded-lg p-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-accent-foreground text-sm"></i>
+                            </div>
+                            <span class="font-medium text-muted-foreground">Asistente IA</span>
+                        </div>
+                        <div id="chatbotResponse" class="text-foreground leading-relaxed">
+                            <!-- La respuesta del chatbot aparecerá aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let promptHistory = JSON.parse(localStorage.getItem('promptHistory') || '[]');
+        let aiSuggestionsEnabled = true;
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTheme();
+            loadHistory();
+            setupEventListeners();
+            setupAISuggestions();
+        });
+
+        // Configuración del tema
+        function initializeTheme() {
+            document.documentElement.className = currentTheme;
+            const themeIcon = document.querySelector('#themeToggle i');
+            themeIcon.className = currentTheme === 'dark' ? 'fas fa-sun text-lg' : 'fas fa-moon text-lg';
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            const promptEditor = document.getElementById('promptEditor');
+            const charCounter = document.getElementById('charCounter');
+            const themeToggle = document.getElementById('themeToggle');
+            const aiToggle = document.getElementById('aiToggle');
+            const clearBtn = document.getElementById('clearBtn');
+            const savePrompt = document.getElementById('savePrompt');
+            const testPrompt = document.getElementById('testPrompt');
+            const exportPrompt = document.getElementById('exportPrompt');
+            const sharePrompt = document.getElementById('sharePrompt');
+
+            // Contador de caracteres
+            promptEditor.addEventListener('input', function() {
+                const length = this.value.length;
+                const maxLength = 2000;
+                charCounter.textContent = `${length} / ${maxLength}`;
+                
+                charCounter.className = 'char-counter text-sm';
+                if (length > maxLength * 0.8) {
+                    charCounter.classList.add('warning');
+                }
+                if (length > maxLength * 0.95) {
+                    charCounter.classList.remove('warning');
+                    charCounter.classList.add('danger');
+                }
+
+                // Mostrar sugerencias si está habilitado
+                if (aiSuggestionsEnabled && length > 10) {
+                    showAISuggestions();
+                }
+            });
+
+            // Toggle de tema
+            themeToggle.addEventListener('click', function() {
+                currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.className = currentTheme;
+                localStorage.setItem('theme', currentTheme);
+                
+                const icon = this.querySelector('i');
+                icon.className = currentTheme === 'dark' ? 'fas fa-sun text-lg' : 'fas fa-moon text-lg';
+            });
+
+            // Toggle de sugerencias IA
+            aiToggle.addEventListener('click', function() {
+                aiSuggestionsEnabled = !aiSuggestionsEnabled;
+                const toggle = this.querySelector('div');
+                if (aiSuggestionsEnabled) {
+                    toggle.style.transform = 'translateX(0)';
+                    toggle.style.backgroundColor = '#84cc16';
+                } else {
+                    toggle.style.transform = 'translateX(-16px)';
+                    toggle.style.backgroundColor = '#ffffff';
+                    document.getElementById('suggestions').classList.add('hidden');
+                }
+            });
+
+            // Limpiar editor
+            clearBtn.addEventListener('click', function() {
+                if (confirm('¿Estás seguro de que quieres limpiar el editor?')) {
+                    promptEditor.value = '';
+                    charCounter.textContent = '0 / 2000';
+                    charCounter.className = 'char-counter text-sm text-muted-foreground';
+                    document.getElementById('suggestions').classList.add('hidden');
+                    document.getElementById('resultsPanel').classList.add('hidden');
+                }
+            });
+
+            // Guardar prompt
+            savePrompt.addEventListener('click', function() {
+                const prompt = promptEditor.value.trim();
+                if (prompt) {
+                    saveToHistory(prompt);
+                    showNotification('Prompt guardado exitosamente', 'success');
+                } else {
+                    showNotification('No hay contenido para guardar', 'warning');
+                }
+            });
+
+            // Probar prompt
+            testPrompt.addEventListener('click', function() {
+                const prompt = promptEditor.value.trim();
+                if (prompt) {
+                    simulateChatbotResponse(prompt);
+                } else {
+                    showNotification('Escribe un prompt para probar', 'warning');
+                }
+            });
+
+            // Exportar prompt
+            exportPrompt.addEventListener('click', function() {
+                const prompt = promptEditor.value.trim();
+                if (prompt) {
+                    exportPromptToFile(prompt);
+                } else {
+                    showNotification('No hay contenido para exportar', 'warning');
+                }
+            });
+
+            // Compartir prompt
+            sharePrompt.addEventListener('click', function() {
+                const prompt = promptEditor.value.trim();
+                if (prompt) {
+                    sharePromptFunction(prompt);
+                } else {
+                    showNotification('No hay contenido para compartir', 'warning');
+                }
+            });
+
+            // Templates
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const title = this.querySelector('h4').textContent;
+                    loadTemplate(title);
+                });
+            });
+        }
+
+        // Sugerencias IA
+        function setupAISuggestions() {
+            const suggestions = [
+                "Añade contexto específico sobre tu audiencia objetivo",
+                "Incluye ejemplos concretos para mayor claridad",
+                "Especifica el tono y estilo de respuesta deseado",
+                "Agrega restricciones o limitaciones importantes",
+                "Menciona el formato de salida preferido",
+                "Incluye criterios de evaluación o métricas",
+                "Especifica el nivel de detalle requerido",
+                "Añade información sobre el contexto de uso"
+            ];
+
+            window.currentSuggestions = suggestions;
+        }
+
+        function showAISuggestions() {
+            if (!aiSuggestionsEnabled) return;
+
+            const suggestionsPanel = document.getElementById('suggestions');
+            const suggestionsList = document.getElementById('suggestionsList');
+            
+            // Seleccionar 3 sugerencias aleatorias
+            const randomSuggestions = window.currentSuggestions
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3);
+
+            suggestionsList.innerHTML = randomSuggestions.map(suggestion => `
+                <div class="suggestion-item p-2 rounded-lg cursor-pointer transition-all duration-200 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground">
+                    <i class="fas fa-lightbulb text-xs mr-2"></i>
+                    ${suggestion}
+                </div>
+            `).join('');
+
+            // Agregar event listeners a las sugerencias
+            suggestionsList.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const currentText = document.getElementById('promptEditor').value;
+                    const suggestionText = this.textContent.trim().substring(2); // Remover el ícono
+                    document.getElementById('promptEditor').value = currentText + '\n\n' + suggestionText;
+                    suggestionsPanel.classList.add('hidden');
+                    showNotification('Sugerencia aplicada', 'success');
+                });
+            });
+
+            suggestionsPanel.classList.remove('hidden');
+        }
+
+        // Historial
+        function loadHistory() {
+            const historyContainer = document.getElementById('historyContainer');
+            
+            if (promptHistory.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-center text-muted-foreground text-sm py-4">
+                        <i class="fas fa-history text-2xl mb-2 block"></i>
+                        No hay prompts guardados
+                    </div>
+                `;
+                return;
+            }
+
+            historyContainer.innerHTML = promptHistory.slice(-10).reverse().map((item, index) => `
+                <div class="history-item p-3 rounded-lg cursor-pointer transition-all duration-200 border border-sidebar-border" data-index="${promptHistory.length - 1 - index}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-sidebar-foreground font-medium truncate">${item.title}</p>
+                            <p class="text-xs text-muted-foreground mt-1">${item.date}</p>
+                        </div>
+                        <button class="delete-history ml-2 p-1 text-muted-foreground hover:text-destructive transition-colors" data-index="${promptHistory.length - 1 - index}">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Event listeners para el historial
+            historyContainer.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.delete-history')) return;
+                    const index = parseInt(this.dataset.index);
+                    loadFromHistory(index);
+                });
+            });
+
+            historyContainer.querySelectorAll('.delete-history').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const index = parseInt(this.dataset.index);
+                    deleteFromHistory(index);
+                });
+            });
+        }
+
+        function saveToHistory(prompt) {
+            const historyItem = {
+                title: prompt.substring(0, 50) + (prompt.length > 50 ? '...' : ''),
+                content: prompt,
+                date: new Date().toLocaleDateString('es-ES', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
+            };
+
+            promptHistory.push(historyItem);
+            localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+            loadHistory();
+        }
+
+        function loadFromHistory(index) {
+            const item = promptHistory[index];
+            if (item) {
+                document.getElementById('promptEditor').value = item.content;
+                document.getElementById('charCounter').textContent = `${item.content.length} / 2000`;
+                showNotification('Prompt cargado desde el historial', 'success');
+            }
+        }
+
+        function deleteFromHistory(index) {
+            if (confirm('¿Eliminar este prompt del historial?')) {
+                promptHistory.splice(index, 1);
+                localStorage.setItem('promptHistory', JSON.stringify(promptHistory));
+                loadHistory();
+                showNotification('Prompt eliminado del historial', 'success');
+            }
+        }
+
+        // Templates
+        function loadTemplate(templateName) {
+            const templates = {
+                'Asistente Creativo': `Actúa como un asistente creativo experto. Tu tarea es ayudarme a generar contenido original y atractivo.
+
+Contexto: [Describe tu proyecto o necesidad]
+
+Requisitos específicos:
+- Tono: [Profesional/Casual/Divertido/etc.]
+- Audiencia: [Describe tu público objetivo]
+- Formato: [Artículo/Post/Guión/etc.]
+- Longitud: [Especifica la extensión deseada]
+
+Por favor, proporciona:
+1. Ideas principales
+2. Estructura sugerida
+3. Ejemplos específicos
+4. Consejos para mejorar el engagement`,
+
+                'Análisis de Datos': `Actúa como un analista de datos experto. Necesito que analices la siguiente información y proporciones insights valiosos.
+
+Datos a analizar: [Proporciona tus datos o describe el tipo de análisis]
+
+Objetivos del análisis:
+- [Objetivo 1]
+- [Objetivo 2]
+- [Objetivo 3]
+
+Por favor, incluye en tu análisis:
+1. Tendencias principales identificadas
+2. Patrones relevantes
+3. Conclusiones clave
+4. Recomendaciones accionables
+5. Visualizaciones sugeridas (si aplica)
+
+Formato de respuesta: [Especifica si quieres tablas, gráficos, bullet points, etc.]`,
+
+                'Soporte Técnico': `Actúa como un especialista en soporte técnico. Ayúdame a resolver el siguiente problema de manera clara y paso a paso.
+
+Problema: [Describe el problema técnico]
+
+Información del sistema:
+- Plataforma: [Windows/Mac/Linux/Web/Mobile]
+- Versión: [Especifica versiones relevantes]
+- Navegador: [Si aplica]
+- Mensaje de error: [Si hay alguno]
+
+Por favor, proporciona:
+1. Diagnóstico del problema
+2. Posibles causas
+3. Solución paso a paso
+4. Medidas preventivas
+5. Recursos adicionales para consulta
+
+Nivel técnico del usuario: [Principiante/Intermedio/Avanzado]`
+            };
+
+            const template = templates[templateName];
+            if (template) {
+                document.getElementById('promptEditor').value = template;
+                document.getElementById('charCounter').textContent = `${template.length} / 2000`;
+                showNotification(`Template "${templateName}" cargado`, 'success');
+            }
+        }
+
+        // Simulación de respuesta del chatbot
+        function simulateChatbotResponse(prompt) {
+            const resultsPanel = document.getElementById('resultsPanel');
+            const responseDiv = document.getElementById('chatbotResponse');
+            
+            resultsPanel.classList.remove('hidden');
+            responseDiv.innerHTML = `
+                <div class="flex items-center gap-2 text-muted-foreground">
+                    <div class="animate-spin">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <span>Generando respuesta...</span>
+                </div>
+            `;
+
+            // Simular respuesta después de 2 segundos
+            setTimeout(() => {
+                const responses = [
+                    "Excelente prompt. He analizado tu solicitud y puedo ayudarte con una estrategia completa. Basándome en las mejores prácticas actuales, te recomiendo enfocarte en contenido de valor que resuene con tu audiencia objetivo...",
+                    "Perfecto. Tu prompt está bien estructurado y proporciona el contexto necesario. Para darte la mejor respuesta, he considerado los aspectos que mencionas y puedo sugerir un enfoque integral que incluye...",
+                    "Entiendo perfectamente lo que necesitas. Tu prompt es claro y específico, lo cual me permite generar una respuesta precisa y útil. Te propongo la siguiente estrategia paso a paso..."
+                ];
+
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                
+                responseDiv.innerHTML = `
+                    <p class="mb-4">${randomResponse}</p>
+                    <div class="bg-background rounded-lg p-4 border border-border">
+                        <h4 class="font-medium mb-2 text-foreground">Análisis del Prompt:</h4>
+                        <ul class="text-sm text-muted-foreground space-y-1">
+                            <li>✅ Contexto claro y específico</li>
+                            <li>✅ Objetivos bien definidos</li>
+                            <li>✅ Estructura organizada</li>
+                            <li>✅ Longitud apropiada (${prompt.length} caracteres)</li>
+                        </ul>
+                    </div>
+                `;
+            }, 2000);
+
+            showNotification('Probando prompt con el chatbot...', 'info');
+        }
+
+        // Funciones de utilidad
+        function exportPromptToFile(prompt) {
+            const blob = new Blob([prompt], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `prompt_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification('Prompt exportado exitosamente', 'success');
+        }
+
+        function sharePromptFunction(prompt) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Prompt para Chatbot',
+                    text: prompt
+                });
+            } else {
+                navigator.clipboard.writeText(prompt).then(() => {
+                    showNotification('Prompt copiado al portapapeles', 'success');
+                });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            const colors = {
+                success: 'bg-accent text-accent-foreground',
+                warning: 'bg-yellow-500 text-white',
+                error: 'bg-destructive text-destructive-foreground',
+                info: 'bg-primary text-primary-foreground'
+            };
+
+            notification.className = `fixed top-4 right-4 ${colors[type]} px-6 py-3 rounded-lg shadow-lg z-50 slide-in`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-${type === 'success' ? 'check' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times' : 'info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Atajos de teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        document.getElementById('savePrompt').click();
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        document.getElementById('testPrompt').click();
+                        break;
+                    case 'k':
+                        e.preventDefault();
+                        document.getElementById('clearBtn').click();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
